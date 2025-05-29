@@ -6,6 +6,7 @@ import time
 import json
 import seaborn as sns
 import pandas as pd
+from tabulate import tabulate
 from ApproximateAlgorithm.ApproximateAlgorithmClass import ApproximateTSPSolver
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 # =============================================================================
@@ -25,7 +26,6 @@ def evaluate_ml_metrics(df):
         rmse = np.sqrt(mse)
         mape = (np.abs(y_true - y_pred) / y_true).mean() * 100
         r2 = r2_score(y_true, y_pred)
-
         results.append({
             "Algorithm": algo,
             "MAE": round(mae, 2),
@@ -67,19 +67,18 @@ def plot_actual_vs_predicted_bar(df, save_path="plots/actual_vs_predicted_bar.pn
     plt.close()
     print(f"Saved as {save_path}")
 
-def plot_runtime_vs_size(size_list, time_list, method_name):
-    plt.figure()
-    if len(size_list) != len(time_list):
-        print(
-            f"Size mismatch for method {method_name}: size_list has {len(size_list)}, time_list has {len(time_list)}")
-    else:
-        plt.plot(size_list, time_list, marker='o')
-    plt.title(f"{method_name} Solver Runtime vs Matrix Size")
-    plt.xlabel("Matrix Size (n x n)")
-    plt.ylabel("Runtime (seconds)")
-    plt.grid(True)
-    plt.tight_layout()
-    plt.show()
+def plot_runtime_vs_size(sorted_sizes, sorted_times, method_name):
+        plt.figure()
+        plt.plot(sorted_sizes, sorted_times, marker='o')
+        plt.title(f"{method_name} Solver Runtime vs Matrix Size (Sorted)")
+        plt.xlabel("Matrix Size (n x n)")
+        plt.ylabel("Runtime (seconds)")
+        plt.grid(True)
+        plt.tight_layout()
+        plot_path = os.path.join("plots", f"{method_name}_runtime_sorted.png")
+        plt.savefig(plot_path)
+        plt.close()
+        print(f"Runtime plot saved as {plot_path}")
 
 # =============================================================================
 #                               Load Result
@@ -261,7 +260,7 @@ class MatrixGenerator:
             }
 
         print("Finish reading tsp files")
-
+   
         with open('output.json', 'w') as outfile:
             json.dump(output_data, outfile, indent=2)
 
@@ -285,7 +284,6 @@ class MatrixGenerator:
                 n = int(line.split(":")[-1].strip())
             elif line == "NODE_COORD_SECTION" or line == "EDGE_WEIGHT_SECTION":
                 break
-
         if meta_info.get("EDGE_WEIGHT_TYPE") in ["EUC_2D", "GEO", "ATT", "CEIL_2D"]:
             in_coord_section = False
             for line in lines:
@@ -356,91 +354,87 @@ class MatrixGenerator:
 
 if __name__ == '__main__':
     # =================================Run Once =============================
-    generator = MatrixGenerator()
-    print("Reading File List")
-    generator.read_tsp_files()
-    matrices_map = generator.read_file()  # Read example/*.txt
+    # generator = MatrixGenerator()
+    # print("Reading File List")
+    # generator.read_tsp_files()
+    # matrices_map = generator.read_file()  # Read example/*.txt
+    #
+    # filename_list = matrices_map.keys()
+    #
+    # print(filename_list)
+    #
+    # # won't add exact algorithm
+    # result_data = {}
+    # methods = {
+    #     "Nearest Neighbor": lambda m: ApproximateTSPSolver(m).nearest_neighbors_solver(),
+    #     "Christofides Solver": lambda m: ApproximateTSPSolver(m).christofides_solver()
+    # }
+    #
+    # os.makedirs("plots", exist_ok=True)
+    #
+    # # Save approximate result
+    # size_lists = {method: [] for method in methods}
+    # time_lists = {method: [] for method in methods}
+    #
+    # # throw exceptions
+    # def is_square_matrix(matrix):
+    #     n = len(matrix)
+    #     return all(len(row) == n for row in matrix)
+    #
+    #
+    # for filename in filename_list:
+    #     base_name = os.path.basename(filename)
+    #     print(f"\n Solving {base_name}")
+    #     input_matrix = matrices_map[filename]
+    #
+    #     if not is_square_matrix(input_matrix):
+    #         print(f"Skipping {filename}: matrix is not square.")
+    #         continue
+    #     size = len(input_matrix)
+    #
+    #     result_data[base_name] = {}
+    #
+    #     for method_name, solve_fn in methods.items():
+    #         print(f" Running {method_name}...")
+    #         start_time = time.time()
+    #         cost, path = solve_fn(input_matrix)
+    #         elapsed = time.time() - start_time
+    #
+    #         generator.print_result(method_name, cost, path, elapsed)
+    #
+    #         result_data[base_name][method_name] = {
+    #             "cost": cost,
+    #             "path": path,
+    #             "time": elapsed,
+    #             "size": size
+    #         }
+    #
+    #         size_lists[method_name].append(size)
+    #         time_lists[method_name].append(elapsed)
+    #
+    # #  Save result as json
+    # with open("result_summary.json", "w") as f:
+    #     json.dump(result_data, f, indent=2)
+    # # save result as plot
+    # for method_name in methods:
+    #     sizes = size_lists[method_name]
+    #     times = time_lists[method_name]
+    #     # Sort size
+    #     sorted_pairs = sorted(zip(sizes, times), key=lambda x: x[0])
+    #     sorted_sizes, sorted_times = zip(*sorted_pairs)
+    #     plot_runtime_vs_size(sorted_sizes, sorted_times, method_name)
 
-    filename_list = matrices_map.keys()
-
-    print(filename_list)
-
-    # won't add exact algorithm
-    result_data = {}
-    methods = {
-        "Nearest Neighbor": lambda m: ApproximateTSPSolver(m).nearest_neighbors_solver(),
-        "Christofides Solver": lambda m: ApproximateTSPSolver(m).christofides_solver()
-    }
-
-    os.makedirs("plots", exist_ok=True)
-
-    # Save approximate result
-    size_lists = {method: [] for method in methods}
-    time_lists = {method: [] for method in methods}
-
-    # throw exceptions
-    def is_square_matrix(matrix):
-        n = len(matrix)
-        return all(len(row) == n for row in matrix)
-
-
-    for filename in filename_list:
-        base_name = os.path.basename(filename)
-        print(f"\n Solving {base_name}")
-        input_matrix = matrices_map[filename]
-
-        if not is_square_matrix(input_matrix):
-            print(f"Skipping {filename}: matrix is not square.")
-            continue
-        size = len(input_matrix)
-
-        result_data[base_name] = {}
-
-        for method_name, solve_fn in methods.items():
-            print(f" Running {method_name}...")
-            start_time = time.time()
-            cost, path = solve_fn(input_matrix)
-            elapsed = time.time() - start_time
-
-            generator.print_result(method_name, cost, path, elapsed)
-
-            result_data[base_name][method_name] = {
-                "cost": cost,
-                "path": path,
-                "time": elapsed,
-                "size": size
-            }
-
-            size_lists[method_name].append(size)
-            time_lists[method_name].append(elapsed)
-
-    #  Save result as json
-    with open("result_summary.json", "w") as f:
-        json.dump(result_data, f, indent=2)
-    # save result as plot
-    for method_name in methods:
-        sizes = size_lists[method_name]
-        times = time_lists[method_name]
-
-        # Sort size
-        sorted_pairs = sorted(zip(sizes, times), key=lambda x: x[0])
-        sorted_sizes, sorted_times = zip(*sorted_pairs)
-
-        plt.figure()
-        plt.plot(sorted_sizes, sorted_times, marker='o')
-        plt.title(f"{method_name} Solver Runtime vs Matrix Size (Sorted)")
-        plt.xlabel("Matrix Size (n x n)")
-        plt.ylabel("Runtime (seconds)")
-        plt.grid(True)
-        plt.tight_layout()
-        plot_path = os.path.join("plots", f"{method_name}_runtime_sorted.png")
-        plt.savefig(plot_path)
-        plt.close()
-        print(f"Runtime plot saved as {plot_path}")
-
+    # si1032
+    # si175.txt
+    # si535.txt
+    # | 170 | si1032.txt | Nearest
+    # Neighbor | 32263 | 92650 | -60387 | -65.1775 | 0.0326383 |
+    # | 171 | si1032.txt | Christofides
+    # Solver | 89995 | 92650 | -2655 | -2.86562 | 7.76672
     # ============================================
     # Evaluation - result stored in result_summary.json
     df = evaluate_algorithms()
+    print(tabulate(df, headers='keys', tablefmt='grid'))
     plot_actual_vs_predicted_bar(df)
     result_df = evaluate_ml_metrics(df)
     print(result_df)
