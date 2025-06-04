@@ -1,0 +1,27 @@
+Running burma14.txt (14 cities)...
+  [Branch & Bound] Cost: 3323.0, Time: 53.6322s, Gap: N/A
+size: 14
+  [Brute Force] Cost: 3323.0, Time: 3727.5296s, Gap: N/A
+  [Held-Karp] Cost: 3158.0, Time: 0.0663s, Gap: N/A
+
+Running city5.txt (5 cities)...
+  [Branch & Bound] Cost: 19.0, Time: 0.0002s, Gap: 0.0
+size: 5
+  [Brute Force] Cost: 19.0, Time: 0.0000s, Gap: 0.0
+  [Held-Karp] Cost: 14.0, Time: 0.0000s, Gap: -5.0
+
+Running co04_dist.txt (4 cities)...
+  [Branch & Bound] Cost: 21.0, Time: 0.0000s, Gap: N/A
+size: 4
+  [Brute Force] Cost: 21.0, Time: 0.0000s, Gap: N/A
+  [Held-Karp] Cost: 16.0, Time: 0.0000s, Gap: N/A
+
+Running five_d.txt (5 cities)...
+  [Branch & Bound] Cost: 19.0, Time: 0.0001s, Gap: N/A
+size: 5
+  [Brute Force] Cost: 19.0, Time: 0.0000s, Gap: N/A
+  [Held-Karp] Cost: 14.0, Time: 0.0000s, Gap: N/A
+
+Running gr17.txt (17 cities)...
+  [Branch & Bound] Cost: 2085.0, Time: 8332.2977s, Gap: N/A
+size: 17
