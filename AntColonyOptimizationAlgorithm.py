@@ -156,9 +156,9 @@ def read_distance_matrix(file_path):
     return np.array(matrix)
 
 # 使用方法
-distance_matrix = read_distance_matrix("example/d1655.txt")
+distance_matrix = read_distance_matrix("example/gr21.txt")
 
-aco = AntColony(distance_matrix, num_ants=20, num_iterations=50)
+aco = AntColony(distance_matrix, num_ants=50, num_iterations=20)
 best_path, best_dist = aco.run()
 
 print("Best path:", best_path)
