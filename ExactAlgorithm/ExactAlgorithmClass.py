@@ -15,6 +15,8 @@ class ExactTSPSolver:
     def brute_force_solver(self, distance_matrix) -> Tuple[float, list[Any]]:
         n = len(distance_matrix)
         permutation = itertools.permutations(range(1, n))
+        # 生成从城市1到城市n-1的所有排列组合
+        # 不包括城市0（因为它固定是起点和终点）
         print("size:", n)
         for perm in permutation:
             route = [0] + list(perm) + [0]
@@ -79,17 +81,17 @@ class ExactTSPSolver:
         return self.best_cost, best_route
 
     def held_karp_solver(self, distance_matrix):
-
         n = len(distance_matrix)
 
         dp = {}
         for i in range(1, n):  # Any other node
 
             dp[(frozenset([0, i]), i)] = distance_matrix[0][i]
+        #     如果你没有 dp[{0, i}, i]，就根本没法构造 dp[{0, i, j}, j]
 
         # Iterate over subsets of increasing size
         for subset_size in range(2, n):
-            for subset in itertools.combinations(range(1, n), subset_size):
+            for subset in itertools.combinations(range(1, n), subset_size):#subset_size表示路径中除了城市0之外，访问了几个城市
                 subset = frozenset(subset) | {0}  # Include the start node
                 for current_node in subset - {0}:
                     # Calculate the minimum cost to reach the current node
@@ -97,6 +99,13 @@ class ExactTSPSolver:
                         dp[(subset - {current_node}, prev_node)] + distance_matrix[prev_node][current_node]
                         for prev_node in subset if prev_node != 0 and prev_node != current_node
                     )
+        #             每一项代表一条候选路径：
+        #
+        # 先走到 prev_node（状态：dp[subset - {current_node}, prev_node]）
+        #
+        # 再从 prev_node 走到 current_node（花费 distance[prev_node][current_node]）
+        #
+        # 程序试所有 prev_node，选择花费最小的路径 说白了 先走回之前那个城市计算出的是最小cost 再加上到现在在的那个城市的cost的最小值加起来也是最小值
         # - pseudocode
         # opt := mink≠1 [g({2, 3, ..., n}, k) + d(k, 1)]
         # Find the minimum cost to complete the tour and return to the start
@@ -105,6 +114,12 @@ class ExactTSPSolver:
             dp[(full_set, current_node)] + distance_matrix[current_node][0]
             for current_node in range(1, n)
         )
+        # 回到城市0形成完整路径
+        # 我们最终访问了所有城市 full_set
+        #
+        # 尝试以每个城市作为最后一站 current_node，再加上 → 0 的回程
+        #
+        # 所有组合中花费最小的，就是完整 TSP 的最优解
 
         # Reconstruct the optimal path
         path = []
@@ -121,29 +136,13 @@ class ExactTSPSolver:
 
         path.append(0)
         path.reverse()
+        # 从最后一步开始，逐步回推出“上一步是谁”
+        #
+        # 把路径顺序还原出来
+        #
+        # 最终得到从0出发，访问所有城市，回到0 的完整路径列表
 
         return min_cost, path
-
-# Example usage
-# if __name__ == "__main__":
-#     # Example distance matrix (symmetric matrix)
-#     distance_matrix = [
-#         [0, 10, 15, 20],
-#         [10, 0, 35, 25],
-#         [15, 35, 0, 30],
-#         [20, 25, 30, 0]
-#     ]
+# Held-Karp 每一层都会用“较小子集的最优解”去构造“更大子集的最优解”
 #
-#     solver = ExactTSPSolver(distance_matrix)
-#     bb_best_cost, bb_best_path = solver.branch_and_bound_solver()
-#     bf_best_cost, bf_best_path = solver.brute_force_solver()
-#     hk_best_cost, hk_best_path = solver.held_karp_solver()
-#     print("Branch and bound solution:")
-#     print("Best cost:", bb_best_cost)
-#     print("Best path:", bb_best_path)
-#     print("Brute force solution:")
-#     print("Best cost:", bf_best_cost)
-#     print("Best path:", bf_best_path)
-#     print("Held-Karp solution:")
-#     print("Best cost:", hk_best_cost)
-#     print("Best path:", hk_best_path)
+# 每次都是在尝试 所有可能的转移路径 并 取最小值

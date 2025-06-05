@@ -91,9 +91,9 @@ class ExactAlgorithmMatrixRunner:
                     print(f"  [{algo_name}] failed: {e}")
 
         # Sort all results by city count
-        sort_index = np.argsort(city_nums)
-        city_nums = np.array(city_nums)[sort_index]
-        filenames = np.array(filenames)[sort_index]
+        sort_index = np.argsort(city_nums)#生成一个排序索引数组，告诉你 city_nums 应该按什么顺序排列。
+        city_nums = np.array(city_nums)[sort_index]#将城市数列表按正确顺序重新排列
+        filenames = np.array(filenames)[sort_index]#同步对文件名排序，保持和 city_nums 的顺序一致。
 
         for algo_name in algorithms:
             for key in ['times', 'costs']:
