@@ -357,90 +357,90 @@ class MatrixGenerator:
 if __name__ == '__main__':
     # =================================Run Once =============================
     # exact_folder = "exact_data"
-    # generator = MatrixGenerator()
+    generator = MatrixGenerator()
     # print("Reading File List")
     # # generator.read_tsp_files()
-    # approx_matrices = generator.read_file()
+    approx_matrices = generator.read_file()
     # exact_matrices = generator.read_file(folder='exact_data')  # 新增读取 exact_data/*.txt  # Read example/*.txt
     # print(exact_matrices)
     # print("exact_matrices")
     # # Read file list for the approximate algorithm
-    # filename_list = set(approx_matrices.keys()) | set(exact_matrices.keys())
+    filename_list = set(approx_matrices.keys())
     # # Different algorithm entries
     # print(filename_list)
     #
     # # won't add exact algorithm
-    # result_data = {}
-    # methods = {
-    #     "Nearest Neighbor": lambda m: ApproximateTSPSolver(m).nearest_neighbors_solver(),
-    #     "Christofides Solver": lambda m: ApproximateTSPSolver(m).christofides_solver(),
-    #
-    #
-    # }
-    #
-    # os.makedirs("plots", exist_ok=True)
-    #
-    # # Save approximate result
-    # size_lists = {method: [] for method in methods}
-    # time_lists = {method: [] for method in methods}
-    #
-    # # throw exceptions
-    # def is_square_matrix(matrix):
-    #     n = len(matrix)
-    #     return all(len(row) == n for row in matrix)
-    #
-    #
-    # for filename in filename_list:
-    #     base_name = os.path.basename(filename)
-    #     print(f"\n Solving {base_name}")
-    #     for method_name, solve_fn in methods.items():
-    #         if method_name in ["Brute Force Solver", "Branch and Bound Solver"]:
-    #             if filename not in exact_matrices:
-    #                 print(f"Skipping {filename} for {method_name}, not in exact_data/")
-    #                 continue
-    #             input_matrix = exact_matrices[filename]
-    #         else:
-    #             if filename not in approx_matrices:
-    #                 print(f"Skipping {filename} for {method_name}, not in example/")
-    #                 continue
-    #             input_matrix = approx_matrices[filename]
-    #
-    #     if not is_square_matrix(input_matrix):
-    #         print(f"Skipping {filename}: matrix is not square.")
-    #         continue
-    #     size = len(input_matrix)
-    #
-    #     result_data[base_name] = {}
-    #
-    #     for method_name, solve_fn in methods.items():
-    #         print(f" Running {method_name}...")
-    #         start_time = time.time()
-    #         cost, path = solve_fn(input_matrix)
-    #         elapsed = time.time() - start_time
-    #
-    #         generator.print_result(method_name, cost, path, elapsed)
-    #
-    #         result_data[base_name][method_name] = {
-    #             "cost": cost,
-    #             "path": path,
-    #             "time": elapsed,
-    #             "size": size
-    #         }
-    #
-    #         size_lists[method_name].append(size)
-    #         time_lists[method_name].append(elapsed)
-    #
-    # #  Save result as json
-    # with open("result_summary.json", "w") as f:
-    #     json.dump(result_data, f, indent=2)
-    # # save result as plot
-    # for method_name in methods:
-    #     sizes = size_lists[method_name]
-    #     times = time_lists[method_name]
-    #     # Sort size
-    #     sorted_pairs = sorted(zip(sizes, times), key=lambda x: x[0])
-    #     sorted_sizes, sorted_times = zip(*sorted_pairs)
-    #     plot_runtime_vs_size(sorted_sizes, sorted_times, method_name)
+    result_data = {}
+    methods = {
+        "Nearest Neighbor": lambda m: ApproximateTSPSolver(m).nearest_neighbors_solver(),
+        "Christofides Solver": lambda m: ApproximateTSPSolver(m).christofides_solver(),
+
+
+    }
+
+    os.makedirs("plots", exist_ok=True)
+
+    # Save approximate result
+    size_lists = {method: [] for method in methods}
+    time_lists = {method: [] for method in methods}
+
+    # throw exceptions
+    def is_square_matrix(matrix):
+        n = len(matrix)
+        return all(len(row) == n for row in matrix)
+
+
+    for filename in filename_list:
+        base_name = os.path.basename(filename)
+        print(f"\n Solving {base_name}")
+        for method_name, solve_fn in methods.items():
+            if method_name in ["Brute Force Solver", "Branch and Bound Solver"]:
+                if filename not in exact_matrices:
+                    print(f"Skipping {filename} for {method_name}, not in exact_data/")
+                    continue
+                input_matrix = exact_matrices[filename]
+            else:
+                if filename not in approx_matrices:
+                    print(f"Skipping {filename} for {method_name}, not in example/")
+                    continue
+                input_matrix = approx_matrices[filename]
+
+        if not is_square_matrix(input_matrix):
+            print(f"Skipping {filename}: matrix is not square.")
+            continue
+        size = len(input_matrix)
+
+        result_data[base_name] = {}
+
+        for method_name, solve_fn in methods.items():
+            print(f" Running {method_name}...")
+            start_time = time.time()
+            cost, path = solve_fn(input_matrix)
+            elapsed = time.time() - start_time
+
+            generator.print_result(method_name, cost, path, elapsed)
+
+            result_data[base_name][method_name] = {
+                "cost": cost,
+                "path": path,
+                "time": elapsed,
+                "size": size
+            }
+
+            size_lists[method_name].append(size)
+            time_lists[method_name].append(elapsed)
+
+    #  Save result as json
+    with open("result_summary.json", "w") as f:
+        json.dump(result_data, f, indent=2)
+    # save result as plot
+    for method_name in methods:
+        sizes = size_lists[method_name]
+        times = time_lists[method_name]
+        # Sort size
+        sorted_pairs = sorted(zip(sizes, times), key=lambda x: x[0])
+        sorted_sizes, sorted_times = zip(*sorted_pairs)
+        plot_runtime_vs_size(sorted_sizes, sorted_times, method_name)
 
     # si1032
     # si175.txt
