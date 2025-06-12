@@ -19,8 +19,22 @@ class AntColony:
         self.evaporation = evaporation
         self.Q = Q
         self.history = []
+    # distance_matrix	城市之间的距离，二维表
+    # num_ants	每次模拟多少只蚂蚁
+    # num_iterations	一共模拟几轮（每轮所有蚂蚁都走一遍）
+    # alpha / beta	控制蚂蚁对“信息素”和“距离”的敏感程度
+    # evaporation	信息素蒸发率，防止信息素过多导致过拟合
+    # Q	每只蚂蚁走完路径后，释放信息素的强度
+    # pheromone	信息素矩阵，一开始所有路径信息素都是1
+    # history	存每一轮的最好路径和距离，用来画图用
 
     def run(self):
+        #主控函数，执行算法的核心逻辑
+        #它做的是：
+        # 重复若干次：
+        #所有蚂蚁都找一条路径（construct_solution）
+        # 选出最短路径
+        # 信息素更新（先蒸发，再更新）
         best_path = None
         best_distance = float('inf')
         # The number of iteration is 50 here
@@ -35,8 +49,8 @@ class AntColony:
                     best_distance = distance
                     best_path = path
 
-            self.evaporate_pheromones()
-            self.deposit_pheromones(all_paths)
+            self.evaporate_pheromones()#信息素蒸发一点（防止过度集中）
+            self.deposit_pheromones(all_paths)#所有蚂蚁在路径上留下信息素
             self.history.append((best_path.copy(), best_distance))
             print(f"Iteration {iteration + 1}/{self.num_iterations}, Best Distance: {best_distance:.2f}")
 
@@ -46,6 +60,12 @@ class AntColony:
 
     # in a finite number of steps.(Not limited)
     def construct_solution(self):
+        # 构造一只蚂蚁的完整路径
+        # 模拟一只蚂蚁怎么走：
+        # 随机选择一个起点城市
+        # 一步步选择下一个城市，直到走完所有城市
+        # 最后返回起点（形成一个闭环）
+        # 用到了下面那个函数来选“下一步去哪”：
         '''
         An ant starts with random city and select_next_city finally arrive the destination
         :return: The whole path List[Int]
@@ -57,9 +77,11 @@ class AntColony:
         print("Starting path construction, the current_city is: ", current_city)
         path.append(current_city)
         visited.add(current_city)
+        # 蚂蚁随机从某个城市出发，加入 path 和 visited
         # Construct the whole path
         while len(path) < self.num_cities:
             next_city = self.select_next_city(current_city, visited)
+            # 不断选下一个没去过的城市，直到走完所有城市为止。每一步都依赖 select_next_city() 来决策去哪。
             print("Continue path construction, the next_city is: ", next_city)
             path.append(next_city)
             visited.add(next_city)
@@ -80,16 +102,24 @@ class AntColony:
         The denominator is a weighted sum of all selectable cities
     """
     def select_next_city(self, current, visited):
+        # 决策怎么走下一步（城市还没走过，且更短的更容易选）
+        # 通过“信息素 + 距离”的加权，算出每个候选城市的概率
+        # 再用 np.random.choice() 随机选一个（但选概率高的可能性更大）
         probabilities = []
         for city in range(self.num_cities):
             if city in visited: # Skipping vistied cities
                 probabilities.append(0)
+                #筛掉已经去过的城市，这些城市在这一轮中不能被选中
             else:
                 pheromone = self.pheromone[current][city] ** self.alpha #\tau_{ij}^{\alpha}
+                # 取当前城市到该城市的 信息素值，指数化后作为权重（控制权重变化的强度由 alpha 决定）
                 print("pheromone[current][city]", pheromone)
                 heuristic = (1 / self.distances[current][city]) ** self.beta #\eta_{ij}^{\beta}
+                #取当前城市到该城市的 距离倒数，也做指数处理（距离越短，值越大）
+                #beta 越大，表示蚂蚁越“贪心”，更看重短路径
                 print("heuristic[current][city]", heuristic)
                 probabilities.append(pheromone * heuristic)
+                #计算出这个城市的综合吸引力 = 信息素 × 距离倒数
 
         probabilities = np.array(probabilities)
         print(probabilities)
@@ -98,9 +128,13 @@ class AntColony:
         # an unvisited city is randomly selected
         if probabilities.sum() == 0:
             return random.choice([i for i in range(self.num_cities) if i not in visited])
+        #有时候所有城市的权重是0（比如某些距离是 ∞），就随机挑一个没走过的城市应急处理
+
         probabilities /= probabilities.sum() # Normalization
+        #把所有值加起来变成1（标准概率分布），之后用np.random.choice() 按照比例选一个城市
         print("The probability of selecting next city is {}", probabilities)
         return np.random.choice(range(self.num_cities), p=probabilities)
+       #信息素 (τ)	距离 (d)	权重 = τ^α * (1/d)^β
 
     def path_distance(self, path):
         return sum(self.distances[path[i]][path[i + 1]] for i in range(len(path) - 1))
@@ -110,6 +144,11 @@ class AntColony:
 
     def evaporate_pheromones(self):
         self.pheromone *= (1 - self.evaporation)
+    # 这行代码的意思是：整张城市图上所有路径的信息素都乘以一个小于1的系数
+    # self.evaporation 是蒸发率，比如 0.5 表示每轮留一半
+    # 这相当于让旧信息逐渐消失，防止信息素“过度集中”在某条路径
+
+
     # 每只蚂蚁走完路径后，按照路径长度回馈信息素。
     # Each ant travels backward from the destination to the spawn_point and deposits pheromones on this path.
     # Q: strength of ant
@@ -121,6 +160,9 @@ class AntColony:
                 a, b = path[i], path[i + 1]
                 self.pheromone[a][b] += pheromone_amount
                 self.pheromone[b][a] += pheromone_amount  # Keep symmetric
+    # 给路径上的每一条边加上信息素
+    # 对路径上的每一段（a 到 b）加上刚才算出的信息素
+    # 因为是对称的城市图，所以 a→b 和 b→a 都要加
 
     def plot_convergence(self):
         distances = [d for _, d in self.history]
@@ -158,7 +200,7 @@ def read_distance_matrix(file_path):
 # 使用方法
 distance_matrix = read_distance_matrix("example/gr21.txt")
 
-aco = AntColony(distance_matrix, num_ants=50, num_iterations=20)
+aco = AntColony(distance_matrix, num_ants=5, num_iterations=5)
 best_path, best_dist = aco.run()
 
 print("Best path:", best_path)
